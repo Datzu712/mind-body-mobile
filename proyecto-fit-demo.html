@@ -1,0 +1,2307 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Mind&Body</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #050505;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        overflow: hidden;
+      }
+
+      /* Ambient glow behind phone */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 214, 0, 0.06) 0%,
+          transparent 65%
+        );
+        pointer-events: none;
+      }
+
+      .phone-frame {
+        width: 390px;
+        height: 844px;
+        background: #0a0a0a;
+        border-radius: 50px;
+        overflow: hidden;
+        position: relative;
+        box-shadow:
+          0 0 0 1px #2a2a2a,
+          0 0 0 9px #111111,
+          0 0 0 10px #2a2a2a,
+          0 40px 120px rgba(0, 0, 0, 0.95),
+          0 0 80px rgba(255, 214, 0, 0.07);
+      }
+
+      /* Dynamic island */
+      .dynamic-island {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 34px;
+        background: #000;
+        border-radius: 20px;
+        z-index: 100;
+      }
+
+      .content-area {
+        height: calc(844px - 82px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-top: 52px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        position: relative;
+      }
+      .content-area::-webkit-scrollbar {
+        display: none;
+      }
+
+      .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 82px;
+        background: #0c0c0c;
+        border-top: 1px solid #1e1e1e;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-around;
+        padding-top: 10px;
+      }
+
+      .nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 12px;
+        position: relative;
+        -webkit-tap-highlight-color: transparent;
+        transition: opacity 0.15s;
+      }
+      .nav-btn:active {
+        opacity: 0.7;
+      }
+
+      .nav-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .screen-anim {
+        animation: fadeUp 0.22s ease forwards;
+      }
+
+      @keyframes fillBar {
+        from {
+          width: 0;
+        }
+      }
+      .bar-fill {
+        animation: fillBar 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .live {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      /* Responsive scale for small viewports */
+      @media (max-height: 860px) {
+        .phone-frame {
+          transform: scale(0.92);
+          transform-origin: center;
+        }
+      }
+      @media (max-height: 780px) {
+        .phone-frame {
+          transform: scale(0.82);
+          transform-origin: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      /* ─── THEME ────────────────────────────────────── */
+      const T = {
+        bg: "#0A0A0A",
+        card: "#141414",
+        card2: "#1C1C1C",
+        card3: "#222222",
+        yellow: "#FFD600",
+        yellowDim: "rgba(255,214,0,0.12)",
+        yellowBdr: "rgba(255,214,0,0.28)",
+        white: "#FFFFFF",
+        muted: "#777777",
+        border: "#222222",
+        green: "#00D26A",
+        red: "#FF3B30",
+        blue: "#0A84FF",
+        purple: "#BF5AF2",
+        orange: "#FF6B35",
+      };
+
+      /* ─── SVG ICONS ─────────────────────────────────── */
+      const Ico = ({
+        d,
+        w = 22,
+        h = 22,
+        color = T.white,
+        sw = 1.8,
+        fill = "none",
+      }) => (
+        <svg
+          width={w}
+          height={h}
+          viewBox="0 0 24 24"
+          fill={fill}
+          stroke={color}
+          strokeWidth={sw}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {(Array.isArray(d) ? d : [d]).map((p, i) => (
+            <path key={i} d={p} />
+          ))}
+        </svg>
+      );
+
+      const NavHome = ({ on }) => (
+        <Ico
+          d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"
+          color={on ? T.yellow : T.muted}
+          fill={on ? T.yellow : "none"}
+          sw={on ? 0 : 1.8}
+        />
+      );
+      const NavCal = ({ on }) => (
+        <Ico
+          d={[
+            "M8 2v3M16 2v3M3 8h18",
+            "M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z",
+          ]}
+          color={on ? T.yellow : T.muted}
+        />
+      );
+      const NavDumbbell = ({ on }) => (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={on ? T.yellow : T.muted}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="6.5" y1="12" x2="17.5" y2="12" />
+          <rect x="2" y="9.5" width="3" height="5" rx="1" />
+          <rect x="5" y="10.5" width="2" height="3" rx="0.5" />
+          <rect x="17" y="10.5" width="2" height="3" rx="0.5" />
+          <rect x="19" y="9.5" width="3" height="5" rx="1" />
+        </svg>
+      );
+      const NavChart = ({ on }) => (
+        <Ico
+          d={["M3 3v18h18", "M7 16l4-4 4 4 4-6"]}
+          color={on ? T.yellow : T.muted}
+        />
+      );
+      const NavUser = ({ on }) => (
+        <Ico
+          d={[
+            "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2",
+            "M12 11a4 4 0 100-8 4 4 0 000 8z",
+          ]}
+          color={on ? T.yellow : T.muted}
+        />
+      );
+      const ChevronR = () => (
+        <Ico d="M9 18l6-6-6-6" color={T.muted} w={16} h={16} sw={2.5} />
+      );
+      const CheckIco = () => (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke={T.bg}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="2,6 5,9 10,3" />
+        </svg>
+      );
+
+      /* ─── SHARED COMPONENTS ─────────────────────────── */
+
+      const StatusBar = () => {
+        const [t, setT] = useState(() =>
+          new Date().toLocaleTimeString("es", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        );
+        useEffect(() => {
+          const iv = setInterval(
+            () =>
+              setT(
+                new Date().toLocaleTimeString("es", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              ),
+            10000,
+          );
+          return () => clearInterval(iv);
+        }, []);
+        return (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 52,
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              padding: "0 26px 8px",
+              zIndex: 10,
+              background: T.bg,
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700, color: T.white }}>
+              {t}
+            </span>
+            <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+              <svg width="15" height="11" viewBox="0 0 15 11">
+                <rect
+                  x="0"
+                  y="5"
+                  width="2.5"
+                  height="6"
+                  rx="0.8"
+                  fill={T.white}
+                />
+                <rect
+                  x="3.5"
+                  y="3"
+                  width="2.5"
+                  height="8"
+                  rx="0.8"
+                  fill={T.white}
+                />
+                <rect
+                  x="7"
+                  y="1.5"
+                  width="2.5"
+                  height="9.5"
+                  rx="0.8"
+                  fill={T.white}
+                />
+                <rect
+                  x="10.5"
+                  y="0"
+                  width="2.5"
+                  height="11"
+                  rx="0.8"
+                  fill={T.white}
+                  opacity="0.35"
+                />
+              </svg>
+              <svg width="22" height="11" viewBox="0 0 22 11">
+                <rect
+                  x="0"
+                  y="1"
+                  width="19"
+                  height="9"
+                  rx="2"
+                  stroke={T.white}
+                  strokeWidth="1.3"
+                  fill="none"
+                />
+                <rect
+                  x="19.5"
+                  y="3.5"
+                  width="2"
+                  height="4"
+                  rx="1"
+                  fill={T.white}
+                  opacity="0.5"
+                />
+                <rect
+                  x="1.2"
+                  y="2.2"
+                  width="14"
+                  height="6.6"
+                  rx="1"
+                  fill={T.yellow}
+                />
+              </svg>
+            </div>
+          </div>
+        );
+      };
+
+      const Bar = ({ pct, color = T.yellow, bg = "#2A2A2A", h = 4 }) => (
+        <div
+          style={{
+            background: bg,
+            height: h,
+            borderRadius: h,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            className="bar-fill"
+            style={{
+              width: `${Math.min(100, Math.max(0, pct))}%`,
+              height: "100%",
+              background: color,
+              borderRadius: h,
+            }}
+          />
+        </div>
+      );
+
+      const Pill = ({ children, bg = T.yellow, fg = T.bg, sm }) => (
+        <span
+          style={{
+            background: bg,
+            color: fg,
+            fontSize: sm ? 9 : 10,
+            fontWeight: 800,
+            padding: sm ? "2px 6px" : "3px 8px",
+            borderRadius: 5,
+            letterSpacing: "0.4px",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {children}
+        </span>
+      );
+
+      const SecHead = ({ title, sub }) => (
+        <div
+          style={{
+            padding: "18px 20px 10px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: T.white,
+              letterSpacing: "1.5px",
+              textTransform: "uppercase",
+            }}
+          >
+            {title}
+          </h2>
+          {sub && (
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.yellow }}>
+              {sub}
+            </span>
+          )}
+        </div>
+      );
+
+      /* ─── HOME SCREEN ───────────────────────────────── */
+      const HomeScreen = () => {
+        const today = new Date().toLocaleDateString("es-ES", {
+          weekday: "long",
+          day: "numeric",
+          month: "short",
+        });
+        const todayPlan = [
+          { name: "Press de Banca", sets: "4×10", done: true },
+          { name: "Press Inclinado DB", sets: "3×12", done: true },
+          { name: "Cable Fly", sets: "3×15", done: false },
+          { name: "Tricep Pushdown", sets: "4×12", done: false },
+          { name: "Skull Crushers", sets: "3×10", done: false },
+        ];
+        return (
+          <div className="screen-anim" style={{ paddingBottom: 24 }}>
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                padding: "4px 20px 0",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: T.muted,
+                    fontWeight: 600,
+                    letterSpacing: "0.8px",
+                    textTransform: "uppercase",
+                    marginBottom: 3,
+                  }}
+                >
+                  {today.toUpperCase()}
+                </p>
+                <h1
+                  style={{
+                    fontSize: 23,
+                    fontWeight: 900,
+                    color: T.white,
+                    lineHeight: 1.15,
+                    letterSpacing: "-0.3px",
+                  }}
+                >
+                  BUENOS DÍAS,
+                  <br />
+                  <span style={{ color: T.yellow }}>JUAN 💪</span>
+                </h1>
+              </div>
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    background: `linear-gradient(135deg, ${T.yellow}, #FF8C00)`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                    fontWeight: 900,
+                    color: T.bg,
+                    boxShadow: `0 0 16px ${T.yellow}44`,
+                  }}
+                >
+                  C
+                </div>
+                <div
+                  className="live"
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    background: T.green,
+                    border: `2px solid ${T.bg}`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Daily stats */}
+            <div style={{ display: "flex", gap: 10, padding: "14px 20px" }}>
+              {[
+                { icon: "🔥", val: "2,140", unit: "CAL", accent: "#FF6B35" },
+                { icon: "⚡", val: "5", unit: "EJERC", accent: T.yellow },
+                { icon: "⏱", val: "45", unit: "MIN", accent: T.blue },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    background: T.card,
+                    borderRadius: 14,
+                    border: `1px solid ${T.border}`,
+                    padding: "11px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 17, marginBottom: 4 }}>{s.icon}</div>
+                  <div
+                    style={{
+                      fontSize: 19,
+                      fontWeight: 900,
+                      color: s.accent,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {s.val}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: T.muted,
+                      fontWeight: 700,
+                      marginTop: 3,
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {s.unit}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Featured Card */}
+            <div style={{ padding: "0 20px" }}>
+              <div
+                style={{
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  background: `linear-gradient(140deg, #1c1400 0%, #2e2000 40%, #0e0e0e 100%)`,
+                  border: `1px solid ${T.yellowBdr}`,
+                  padding: "18px 18px 18px",
+                  position: "relative",
+                  backgroundImage: `radial-gradient(${T.yellow}08 1px, transparent 1px)`,
+                  backgroundSize: "20px 20px",
+                }}
+              >
+                {/* glow blob */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -40,
+                    right: -40,
+                    width: 180,
+                    height: 180,
+                    borderRadius: "50%",
+                    background: `radial-gradient(circle, ${T.yellow}18, transparent 70%)`,
+                    pointerEvents: "none",
+                  }}
+                />
+                <Pill>WORKOUT DEL DÍA</Pill>
+                <h2
+                  style={{
+                    fontSize: 30,
+                    fontWeight: 900,
+                    color: T.white,
+                    marginTop: 10,
+                    lineHeight: 0.95,
+                    textTransform: "uppercase",
+                    letterSpacing: "-1px",
+                  }}
+                >
+                  CHEST
+                  <br />
+                  &amp; TRICEPS
+                </h2>
+                <p
+                  style={{
+                    color: T.muted,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    marginTop: 7,
+                    letterSpacing: "1px",
+                  }}
+                >
+                  PUSH DAY · SEMANA A
+                </p>
+                <div style={{ display: "flex", gap: 14, marginTop: 14 }}>
+                  {[
+                    ["⚡", "6 EJERCICIOS"],
+                    ["⏱", "55 MIN"],
+                    ["🔥", "480 CAL"],
+                  ].map(([ic, lb], i) => (
+                    <div
+                      key={i}
+                      style={{ display: "flex", gap: 4, alignItems: "center" }}
+                    >
+                      <span style={{ fontSize: 11 }}>{ic}</span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: T.muted,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {lb}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  style={{
+                    marginTop: 16,
+                    background: T.yellow,
+                    color: T.bg,
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "11px 22px",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  INICIAR ENTRENAMIENTO →
+                </button>
+              </div>
+            </div>
+
+            {/* Today plan */}
+            <SecHead
+              title="PLAN DE HOY"
+              sub={`${todayPlan.filter((e) => e.done).length}/${todayPlan.length}`}
+            />
+            <div
+              style={{
+                padding: "0 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {todayPlan.map((ex, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    background: T.card,
+                    borderRadius: 12,
+                    padding: "11px 13px",
+                    border: `1px solid ${ex.done ? T.yellowBdr : T.border}`,
+                    opacity: ex.done ? 0.75 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 7,
+                      flexShrink: 0,
+                      background: ex.done ? T.yellow : T.card2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {ex.done && <CheckIco />}
+                  </div>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: ex.done ? T.muted : T.white,
+                      textDecoration: ex.done ? "line-through" : "none",
+                    }}
+                  >
+                    {ex.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 800,
+                      color: T.yellow,
+                      background: T.yellowDim,
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                    }}
+                  >
+                    {ex.sets}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Streak */}
+            <div style={{ padding: "14px 20px 0" }}>
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${T.yellowDim}, rgba(255,214,0,0.04))`,
+                  border: `1px solid ${T.yellowBdr}`,
+                  borderRadius: 16,
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <span style={{ fontSize: 30 }}>🔥</span>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: T.yellow,
+                      fontWeight: 700,
+                      letterSpacing: "0.8px",
+                    }}
+                  >
+                    RACHA ACTIVA
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 900,
+                      color: T.white,
+                      marginTop: 1,
+                    }}
+                  >
+                    8 DÍAS SEGUIDOS
+                  </div>
+                </div>
+                <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+                  <Pill bg={T.yellow} fg={T.bg}>
+                    RÉCORD
+                  </Pill>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      /* ─── ROUTINES SCREEN ────────────────────────────── */
+      const RoutinesScreen = () => {
+        const [selDay, setSelDay] = useState(0);
+        const days = ["L", "M", "X", "J", "V", "S", "D"];
+        const routines = [
+          {
+            name: "PECHO & TRÍCEPS",
+            sub: "Push Day",
+            exs: 6,
+            dur: 55,
+            pct: 40,
+            day: "LUNES",
+            diff: "AVANZADO",
+            accent: "#FF6B35",
+          },
+          {
+            name: "ESPALDA & BÍCEPS",
+            sub: "Pull Day",
+            exs: 7,
+            dur: 60,
+            pct: 0,
+            day: "MARTES",
+            diff: "AVANZADO",
+            accent: T.blue,
+          },
+          {
+            name: "PIERNAS",
+            sub: "Leg Day",
+            exs: 8,
+            dur: 70,
+            pct: 100,
+            day: "MIÉRCOLES",
+            diff: "INTENSO",
+            accent: T.green,
+          },
+          {
+            name: "HOMBROS",
+            sub: "Shoulder Day",
+            exs: 5,
+            dur: 45,
+            pct: 0,
+            day: "JUEVES",
+            diff: "INTERMEDIO",
+            accent: T.purple,
+          },
+          {
+            name: "FULL BODY HIIT",
+            sub: "High Intensity",
+            exs: 10,
+            dur: 40,
+            pct: 40,
+            day: "VIERNES",
+            diff: "INTENSO",
+            accent: T.yellow,
+          },
+          {
+            name: "DESCANSO ACTIVO",
+            sub: "Active Recovery",
+            exs: 4,
+            dur: 30,
+            pct: 0,
+            day: "SÁBADO",
+            diff: "LIGERO",
+            accent: "#64D2FF",
+          },
+          {
+            name: "DESCANSO",
+            sub: "Rest Day",
+            exs: 0,
+            dur: 0,
+            pct: 0,
+            day: "DOMINGO",
+            diff: "REST",
+            accent: T.muted,
+          },
+        ];
+        const done = routines.filter((r) => r.pct === 100).length;
+        return (
+          <div className="screen-anim" style={{ paddingBottom: 24 }}>
+            <div style={{ padding: "4px 20px 14px" }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 700,
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                SEMANA ACTUAL
+              </p>
+              <h1 style={{ fontSize: 24, fontWeight: 900, color: T.white }}>
+                MIS RUTINAS
+              </h1>
+            </div>
+
+            {/* Week overview card */}
+            <div style={{ padding: "0 20px 4px" }}>
+              <div
+                style={{
+                  background: T.card,
+                  borderRadius: 16,
+                  padding: 16,
+                  border: `1px solid ${T.border}`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: T.muted,
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    PROGRESO SEMANAL
+                  </span>
+                  <span
+                    style={{ fontSize: 11, fontWeight: 800, color: T.yellow }}
+                  >
+                    {done}/5 COMPLETADOS
+                  </span>
+                </div>
+                <Bar pct={(done / 5) * 100} h={5} />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginTop: 12,
+                    gap: 4,
+                  }}
+                >
+                  {days.map((d, i) => {
+                    const r = routines[i];
+                    const isDone = r.pct === 100;
+                    const isToday = i === 0;
+                    const isRest = r.diff === "REST";
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelDay(i)}
+                        style={{
+                          flex: 1,
+                          height: 38,
+                          borderRadius: 10,
+                          background: isDone
+                            ? T.yellow
+                            : isToday
+                              ? T.yellowDim
+                              : T.card2,
+                          border: `1px solid ${isDone ? T.yellow : isToday ? T.yellowBdr : "transparent"}`,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          gap: 2,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            color: isDone ? T.bg : isToday ? T.yellow : T.muted,
+                            letterSpacing: "0.3px",
+                          }}
+                        >
+                          {d}
+                        </span>
+                        {!isRest && (
+                          <div
+                            style={{
+                              width: 4,
+                              height: 4,
+                              borderRadius: 2,
+                              background: isDone
+                                ? T.bg
+                                : r.pct > 0
+                                  ? T.yellow
+                                  : "#333",
+                            }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <SecHead title="ESTA SEMANA" />
+            <div
+              style={{
+                padding: "0 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
+              {routines.map((r, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: T.card,
+                    borderRadius: 16,
+                    border: `1px solid ${r.pct === 100 ? r.accent + "40" : T.border}`,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 3,
+                      background: r.pct > 0 ? r.accent : T.border,
+                    }}
+                  />
+                  <div style={{ padding: "12px 14px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 7,
+                            alignItems: "center",
+                            marginBottom: 4,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 9,
+                              color: T.muted,
+                              fontWeight: 800,
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            {r.day}
+                          </span>
+                          <Pill bg={r.accent + "20"} fg={r.accent} sm>
+                            {r.diff}
+                          </Pill>
+                        </div>
+                        <h3
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 800,
+                            color: T.white,
+                            letterSpacing: "-0.2px",
+                          }}
+                        >
+                          {r.name}
+                        </h3>
+                        <p
+                          style={{ fontSize: 11, color: T.muted, marginTop: 1 }}
+                        >
+                          {r.sub}
+                        </p>
+                      </div>
+                      {r.pct === 100 ? (
+                        <div
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 9,
+                            background: r.accent,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 13 13"
+                            fill="none"
+                            stroke={T.bg}
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="2,6.5 5.5,10 11,3" />
+                          </svg>
+                        </div>
+                      ) : r.exs > 0 ? (
+                        <button
+                          style={{
+                            background: T.yellowDim,
+                            border: `1px solid ${T.yellowBdr}`,
+                            color: T.yellow,
+                            borderRadius: 9,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            letterSpacing: "0.3px",
+                          }}
+                        >
+                          INICIAR
+                        </button>
+                      ) : null}
+                    </div>
+                    {r.exs > 0 && (
+                      <div style={{ marginTop: 10 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: 5,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: T.muted,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {r.exs} ejercicios · {r.dur} min
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              color: r.pct > 0 ? r.accent : T.muted,
+                            }}
+                          >
+                            {r.pct}%
+                          </span>
+                        </div>
+                        <Bar pct={r.pct} color={r.accent} h={3} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      /* ─── WORKOUTS SCREEN ────────────────────────────── */
+      const WorkoutsScreen = () => {
+        const [cat, setCat] = useState("fuerza");
+        const cats = [
+          { id: "fuerza", label: "FUERZA", icon: "🏋️" },
+          { id: "cardio", label: "CARDIO", icon: "🏃" },
+          { id: "flexibilidad", label: "FLEXIB.", icon: "🧘" },
+        ];
+        const exMap = {
+          fuerza: [
+            {
+              nm: "Press de Banca",
+              ms: "Pecho",
+              sets: "4",
+              reps: "10",
+              lv: "AVANZADO",
+              ac: "#FF6B35",
+              em: "🏋️",
+            },
+            {
+              nm: "Peso Muerto",
+              ms: "Espalda baja",
+              sets: "4",
+              reps: "6",
+              lv: "AVANZADO",
+              ac: T.red,
+              em: "⚡",
+            },
+            {
+              nm: "Sentadilla",
+              ms: "Cuádriceps",
+              sets: "4",
+              reps: "8",
+              lv: "AVANZADO",
+              ac: "#FF9500",
+              em: "🔥",
+            },
+            {
+              nm: "Press Militar",
+              ms: "Hombros",
+              sets: "3",
+              reps: "10",
+              lv: "INTERMEDIO",
+              ac: T.purple,
+              em: "💥",
+            },
+            {
+              nm: "Dominadas",
+              ms: "Espalda",
+              sets: "3",
+              reps: "Máx.",
+              lv: "AVANZADO",
+              ac: T.blue,
+              em: "🎯",
+            },
+            {
+              nm: "Fondos en Paralelas",
+              ms: "Tríceps",
+              sets: "3",
+              reps: "12",
+              lv: "INTERMEDIO",
+              ac: T.green,
+              em: "✊",
+            },
+          ],
+          cardio: [
+            {
+              nm: "Carrera HIIT",
+              ms: "Full Body",
+              sets: "8",
+              reps: "30s",
+              lv: "INTENSO",
+              ac: T.yellow,
+              em: "🏃",
+            },
+            {
+              nm: "Salto de Cuerda",
+              ms: "Cardio",
+              sets: "5",
+              reps: "2min",
+              lv: "MODERADO",
+              ac: "#FF6B35",
+              em: "⚡",
+            },
+            {
+              nm: "Box Jumps",
+              ms: "Piernas",
+              sets: "4",
+              reps: "15",
+              lv: "INTENSO",
+              ac: T.red,
+              em: "🦘",
+            },
+            {
+              nm: "Burpees",
+              ms: "Full Body",
+              sets: "4",
+              reps: "20",
+              lv: "INTENSO",
+              ac: "#FF9500",
+              em: "🔥",
+            },
+            {
+              nm: "Ciclismo Indoor",
+              ms: "Cardio",
+              sets: "1",
+              reps: "45min",
+              lv: "MODERADO",
+              ac: T.green,
+              em: "🚴",
+            },
+          ],
+          flexibilidad: [
+            {
+              nm: "Hip Flexor Stretch",
+              ms: "Caderas",
+              sets: "3",
+              reps: "60s",
+              lv: "BÁSICO",
+              ac: "#64D2FF",
+              em: "🧘",
+            },
+            {
+              nm: "Isquiotibiales",
+              ms: "Piernas",
+              sets: "3",
+              reps: "45s",
+              lv: "BÁSICO",
+              ac: T.green,
+              em: "🌊",
+            },
+            {
+              nm: "Movilidad Hombros",
+              ms: "Hombros",
+              sets: "3",
+              reps: "30s",
+              lv: "BÁSICO",
+              ac: T.purple,
+              em: "🌀",
+            },
+            {
+              nm: "Cat-Cow",
+              ms: "Columna",
+              sets: "2",
+              reps: "20",
+              lv: "BÁSICO",
+              ac: "#FF9500",
+              em: "🐱",
+            },
+            {
+              nm: "Pigeon Pose",
+              ms: "Glúteos",
+              sets: "2",
+              reps: "90s",
+              lv: "MODERADO",
+              ac: T.blue,
+              em: "🕊️",
+            },
+          ],
+        };
+        const list = exMap[cat];
+        return (
+          <div className="screen-anim" style={{ paddingBottom: 24 }}>
+            <div style={{ padding: "4px 20px 14px" }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 700,
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                CATÁLOGO
+              </p>
+              <h1 style={{ fontSize: 24, fontWeight: 900, color: T.white }}>
+                EJERCICIOS
+              </h1>
+            </div>
+
+            {/* Search bar */}
+            <div style={{ padding: "0 20px 14px" }}>
+              <div
+                style={{
+                  background: T.card,
+                  borderRadius: 12,
+                  border: `1px solid ${T.border}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "11px 14px",
+                }}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={T.muted}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span style={{ fontSize: 13, color: T.muted, fontWeight: 500 }}>
+                  Buscar ejercicio...
+                </span>
+              </div>
+            </div>
+
+            {/* Category tabs */}
+            <div style={{ display: "flex", gap: 8, padding: "0 20px 14px" }}>
+              {cats.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setCat(c.id)}
+                  style={{
+                    flex: 1,
+                    background: cat === c.id ? T.yellow : T.card,
+                    color: cat === c.id ? T.bg : T.muted,
+                    border: `1px solid ${cat === c.id ? T.yellow : T.border}`,
+                    borderRadius: 10,
+                    padding: "9px 6px",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 5,
+                    letterSpacing: "0.3px",
+                    transition: "all 0.18s",
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>{c.icon}</span>
+                  <span>{c.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Exercise list */}
+            <div
+              className="screen-anim"
+              key={cat}
+              style={{
+                padding: "0 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
+              {list.map((ex, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: T.card,
+                    borderRadius: 14,
+                    border: `1px solid ${T.border}`,
+                    padding: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 14,
+                      flexShrink: 0,
+                      background: ex.ac + "20",
+                      border: `1px solid ${ex.ac}38`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                    }}
+                  >
+                    {ex.em}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 3,
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: T.white,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: 140,
+                        }}
+                      >
+                        {ex.nm}
+                      </h3>
+                      <Pill bg={ex.ac + "22"} fg={ex.ac} sm>
+                        {ex.lv}
+                      </Pill>
+                    </div>
+                    <p
+                      style={{ fontSize: 11, color: T.muted, marginBottom: 8 }}
+                    >
+                      {ex.ms}
+                    </p>
+                    <div style={{ display: "flex", gap: 7 }}>
+                      {[
+                        ["SERIES", ex.sets],
+                        ["REPS", ex.reps],
+                      ].map(([lbl, val], j) => (
+                        <div
+                          key={j}
+                          style={{
+                            background: T.card2,
+                            borderRadius: 7,
+                            padding: "4px 9px",
+                            display: "flex",
+                            gap: 5,
+                            alignItems: "center",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 9,
+                              color: T.muted,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {lbl}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              color: T.yellow,
+                              fontWeight: 900,
+                            }}
+                          >
+                            {val}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <ChevronR />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      /* ─── PROGRESS SCREEN ────────────────────────────── */
+      const ProgressScreen = () => {
+        const wks = ["S1", "S2", "S3", "S4", "S5", "S6", "S7"];
+        const calD = [2100, 2800, 1900, 3200, 2600, 3400, 2140];
+        const maxC = Math.max(...calD);
+        const goals = [
+          { lbl: "ENTRENAMIENTOS", cur: 4, max: 5, ac: T.yellow, ic: "💪" },
+          { lbl: "CALORÍAS", cur: 3840, max: 5000, ac: "#FF6B35", ic: "🔥" },
+          { lbl: "MIN ACTIVOS", cur: 240, max: 300, ac: T.green, ic: "⏱" },
+        ];
+        const activityTypes = [
+          1, 1, 0, 1, 1, 2, 0, 1, 1, 0, 1, 1, 2, 0, 1, 0, 1, 1, 2, 0, 1, 1, 1,
+        ];
+        return (
+          <div className="screen-anim" style={{ paddingBottom: 24 }}>
+            <div style={{ padding: "4px 20px 14px" }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 700,
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                TU EVOLUCIÓN
+              </p>
+              <h1 style={{ fontSize: 24, fontWeight: 900, color: T.white }}>
+                PROGRESO
+              </h1>
+            </div>
+
+            {/* Big stat grid */}
+            <div
+              style={{
+                padding: "0 20px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+              }}
+            >
+              {[
+                {
+                  lbl: "CAL. QUEMADAS",
+                  val: "3,840",
+                  sub: "esta semana",
+                  ic: "🔥",
+                  ac: "#FF6B35",
+                },
+                {
+                  lbl: "ENTRENOS",
+                  val: "12",
+                  sub: "este mes",
+                  ic: "💪",
+                  ac: T.yellow,
+                },
+                {
+                  lbl: "RACHA ACTUAL",
+                  val: "8 días",
+                  sub: "seguidos",
+                  ic: "⚡",
+                  ac: T.green,
+                },
+                {
+                  lbl: "MEJOR RACHA",
+                  val: "21 d",
+                  sub: "récord",
+                  ic: "🏆",
+                  ac: T.purple,
+                },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: T.card,
+                    borderRadius: 14,
+                    border: `1px solid ${T.border}`,
+                    padding: "14px",
+                  }}
+                >
+                  <div style={{ fontSize: 20, marginBottom: 6 }}>{s.ic}</div>
+                  <div
+                    style={{
+                      fontSize: 21,
+                      fontWeight: 900,
+                      color: s.ac,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {s.val}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: T.muted,
+                      fontWeight: 700,
+                      marginTop: 5,
+                      letterSpacing: "0.5px",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {s.lbl}
+                  </div>
+                  <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>
+                    {s.sub}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Bar chart */}
+            <SecHead title="CALORÍAS POR SEMANA" />
+            <div style={{ padding: "0 20px" }}>
+              <div
+                style={{
+                  background: T.card,
+                  borderRadius: 16,
+                  padding: "16px 16px 14px",
+                  border: `1px solid ${T.border}`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-end",
+                    gap: 6,
+                    height: 82,
+                  }}
+                >
+                  {calD.map((v, i) => {
+                    const h = Math.round((v / maxC) * 70);
+                    const now = i === calD.length - 1;
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "100%",
+                            height: h,
+                            background: now ? T.yellow : T.yellowDim,
+                            borderRadius: "4px 4px 2px 2px",
+                            border: now ? "none" : `1px solid ${T.yellowBdr}`,
+                            boxShadow: now ? `0 0 12px ${T.yellow}55` : "none",
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: now ? T.yellow : T.muted,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {wks[i]}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Goals */}
+            <SecHead title="METAS SEMANALES" />
+            <div
+              style={{
+                padding: "0 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
+              {goals.map((g, i) => {
+                const fmt = (v) =>
+                  v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      background: T.card,
+                      borderRadius: 14,
+                      border: `1px solid ${T.border}`,
+                      padding: 14,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                        }}
+                      >
+                        <span style={{ fontSize: 18 }}>{g.ic}</span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: T.white,
+                            letterSpacing: "0.3px",
+                          }}
+                        >
+                          {g.lbl}
+                        </span>
+                      </div>
+                      <span
+                        style={{ fontSize: 14, fontWeight: 900, color: g.ac }}
+                      >
+                        {fmt(g.cur)}
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: T.muted,
+                            fontWeight: 600,
+                          }}
+                        >
+                          /{fmt(g.max)}
+                        </span>
+                      </span>
+                    </div>
+                    <Bar pct={(g.cur / g.max) * 100} color={g.ac} h={5} />
+                    <p
+                      style={{
+                        fontSize: 10,
+                        color: T.muted,
+                        fontWeight: 600,
+                        marginTop: 6,
+                      }}
+                    >
+                      {Math.round((g.cur / g.max) * 100)}% COMPLETADO
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Activity calendar */}
+            <SecHead title="ACTIVIDAD DEL MES" />
+            <div style={{ padding: "0 20px" }}>
+              <div
+                style={{
+                  background: T.card,
+                  borderRadius: 16,
+                  padding: 14,
+                  border: `1px solid ${T.border}`,
+                }}
+              >
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {activityTypes.map((tp, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        background:
+                          tp === 0
+                            ? T.card2
+                            : tp === 2
+                              ? T.yellowDim
+                              : T.yellow + "BB",
+                        border:
+                          tp === 0
+                            ? `1px solid ${T.border}`
+                            : tp === 2
+                              ? `1px solid ${T.yellowBdr}`
+                              : "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 800,
+                          color: tp === 0 ? "#333" : tp === 2 ? T.yellow : T.bg,
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
+                  {[
+                    [T.yellow + "BB", "none", "Entreno"],
+                    [T.yellowDim, T.yellowBdr, "Activo"],
+                    [T.card2, T.border, "Descanso"],
+                  ].map(([bg, bd, lbl], i) => (
+                    <div
+                      key={i}
+                      style={{ display: "flex", gap: 5, alignItems: "center" }}
+                    >
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 3,
+                          background: bg,
+                          border: `1px solid ${bd}`,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: T.muted,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {lbl}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      /* ─── PROFILE SCREEN ─────────────────────────────── */
+      const ProfileScreen = () => {
+        const settings = [
+          { ic: "👤", lbl: "Información Personal", ac: T.yellow },
+          { ic: "🎯", lbl: "Mis Objetivos", ac: T.green },
+          { ic: "🔔", lbl: "Notificaciones", ac: "#FF9500" },
+          { ic: "🏆", lbl: "Logros y Badges", ac: T.purple },
+          { ic: "📊", lbl: "Estadísticas", ac: T.blue },
+          {
+            ic: "🌙",
+            lbl: "Tema Oscuro",
+            ac: "#64D2FF",
+            toggle: true,
+            on: true,
+          },
+          { ic: "❓", lbl: "Ayuda y Soporte", ac: T.muted },
+          { ic: "⚙️", lbl: "Configuración", ac: T.muted },
+        ];
+        return (
+          <div className="screen-anim" style={{ paddingBottom: 24 }}>
+            <div style={{ padding: "4px 20px 16px" }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 700,
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                MI CUENTA
+              </p>
+              <h1 style={{ fontSize: 24, fontWeight: 900, color: T.white }}>
+                PERFIL
+              </h1>
+            </div>
+
+            {/* Profile hero */}
+            <div style={{ padding: "0 20px" }}>
+              <div
+                style={{
+                  background: `linear-gradient(145deg, #1c1400, #2e2000, #0c0c0c)`,
+                  borderRadius: 20,
+                  padding: 20,
+                  border: `1px solid ${T.yellowBdr}`,
+                  position: "relative",
+                  overflow: "hidden",
+                  backgroundImage: `radial-gradient(${T.yellow}07 1px, transparent 1px)`,
+                  backgroundSize: "18px 18px",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -30,
+                    right: -30,
+                    width: 140,
+                    height: 140,
+                    borderRadius: "50%",
+                    background: `radial-gradient(circle, ${T.yellow}1A, transparent 70%)`,
+                    pointerEvents: "none",
+                  }}
+                />
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div style={{ position: "relative" }}>
+                    <div
+                      style={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: 20,
+                        background: `linear-gradient(135deg, ${T.yellow}, #FF8C00)`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 30,
+                        fontWeight: 900,
+                        color: T.bg,
+                        boxShadow: `0 0 24px ${T.yellow}44`,
+                      }}
+                    >
+                      C
+                    </div>
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 2,
+                        right: 2,
+                        width: 14,
+                        height: 14,
+                        borderRadius: 7,
+                        background: T.green,
+                        border: `2px solid ${T.bg}`,
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h2
+                      style={{
+                        fontSize: 19,
+                        fontWeight: 900,
+                        color: T.white,
+                        marginBottom: 2,
+                      }}
+                    >
+                      Juan Peña
+                    </h2>
+                    <p
+                      style={{ fontSize: 11, color: T.muted, marginBottom: 9 }}
+                    >
+                      juan@meddyg.com
+                    </p>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        background: T.yellow,
+                        borderRadius: 7,
+                        padding: "4px 10px",
+                      }}
+                    >
+                      <span style={{ fontSize: 11 }}>⭐</span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          color: T.bg,
+                          letterSpacing: "0.8px",
+                        }}
+                      >
+                        GOLD MEMBER
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Stats row */}
+                <div
+                  style={{
+                    display: "flex",
+                    marginTop: 18,
+                    background: "rgba(0,0,0,0.3)",
+                    borderRadius: 12,
+                    padding: "12px 0",
+                  }}
+                >
+                  {[
+                    ["47", "ENTRENOS"],
+                    ["89h", "TIEMPO"],
+                    ["8d", "RACHA"],
+                  ].map(([v, l], i) => (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        borderRight: i < 2 ? `1px solid ${T.border}` : "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 20,
+                          fontWeight: 900,
+                          color: T.yellow,
+                        }}
+                      >
+                        {v}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 9,
+                          color: T.muted,
+                          fontWeight: 700,
+                          letterSpacing: "0.5px",
+                          marginTop: 2,
+                        }}
+                      >
+                        {l}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Membership card */}
+            <div style={{ padding: "12px 20px 0" }}>
+              <div
+                style={{
+                  background: T.card,
+                  borderRadius: 14,
+                  padding: "13px 16px",
+                  border: `1px solid ${T.border}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: T.muted,
+                      fontWeight: 700,
+                      letterSpacing: "0.8px",
+                      marginBottom: 4,
+                    }}
+                  >
+                    MEMBRESÍA ACTIVA
+                  </div>
+                  <div
+                    style={{ fontSize: 14, fontWeight: 800, color: T.white }}
+                  >
+                    Plan Gold · $29.99/mes
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                    Renueva: 15 Abr 2026
+                  </div>
+                </div>
+                <button
+                  style={{
+                    background: T.yellowDim,
+                    border: `1px solid ${T.yellowBdr}`,
+                    color: T.yellow,
+                    borderRadius: 10,
+                    padding: "8px 13px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  GESTIONAR
+                </button>
+              </div>
+            </div>
+
+            {/* Settings */}
+            <SecHead title="CONFIGURACIÓN" />
+            <div
+              style={{
+                padding: "0 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              {settings.map((s, i) => (
+                <button
+                  key={i}
+                  style={{
+                    background: T.card,
+                    borderRadius: 12,
+                    border: `1px solid ${T.border}`,
+                    padding: "12px 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    width: "100%",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      background: s.ac + "20",
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 16,
+                    }}
+                  >
+                    {s.ic}
+                  </div>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: T.white,
+                    }}
+                  >
+                    {s.lbl}
+                  </span>
+                  {s.toggle ? (
+                    <div
+                      style={{
+                        width: 44,
+                        height: 26,
+                        borderRadius: 13,
+                        background: s.on ? T.yellow : T.card3,
+                        position: "relative",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 3,
+                          left: s.on ? 21 : 3,
+                          width: 20,
+                          height: 20,
+                          borderRadius: 10,
+                          background: T.bg,
+                          transition: "left 0.2s",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <ChevronR />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Logout */}
+            <div style={{ padding: "14px 20px 0" }}>
+              <button
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: `1px solid ${T.red}44`,
+                  borderRadius: 12,
+                  padding: "13px",
+                  color: T.red,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  letterSpacing: "0.5px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                ⏻ CERRAR SESIÓN
+              </button>
+            </div>
+
+            <p
+              style={{
+                textAlign: "center",
+                fontSize: 10,
+                color: "#333",
+                padding: "14px",
+                letterSpacing: "0.3px",
+              }}
+            >
+              Mind&Body v2.1.0 · MIEMBRO DESDE ENE 2024
+            </p>
+          </div>
+        );
+      };
+
+      /* ─── BOTTOM NAV ─────────────────────────────────── */
+      const tabs = [
+        { id: "home", lbl: "INICIO", Ic: NavHome },
+        { id: "routines", lbl: "RUTINAS", Ic: NavCal },
+        { id: "workouts", lbl: "EJERCICIOS", Ic: NavDumbbell },
+        { id: "progress", lbl: "PROGRESO", Ic: NavChart },
+        { id: "profile", lbl: "PERFIL", Ic: NavUser },
+      ];
+
+      const BottomNav = ({ active, set }) => (
+        <div className="bottom-nav">
+          {tabs.map(({ id, lbl, Ic }) => {
+            const on = active === id;
+            return (
+              <button key={id} className="nav-btn" onClick={() => set(id)}>
+                {on && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -1,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: 28,
+                      height: 3,
+                      borderRadius: 2,
+                      background: T.yellow,
+                      boxShadow: `0 0 8px ${T.yellow}`,
+                    }}
+                  />
+                )}
+                <Ic on={on} />
+                <span
+                  className="nav-label"
+                  style={{ color: on ? T.yellow : T.muted }}
+                >
+                  {lbl}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      );
+
+      /* ─── APP ────────────────────────────────────────── */
+      const screens = {
+        home: <HomeScreen />,
+        routines: <RoutinesScreen />,
+        workouts: <WorkoutsScreen />,
+        progress: <ProgressScreen />,
+        profile: <ProfileScreen />,
+      };
+
+      const App = () => {
+        const [active, setActive] = useState("home");
+        const scrollRef = useRef(null);
+
+        const handleNav = (id) => {
+          setActive(id);
+          if (scrollRef.current) scrollRef.current.scrollTop = 0;
+        };
+
+        return (
+          <div className="phone-frame">
+            <div className="dynamic-island" />
+            <StatusBar />
+            <div className="content-area" ref={scrollRef}>
+              <div key={active}>{screens[active]}</div>
+            </div>
+            <BottomNav active={active} set={handleNav} />
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
