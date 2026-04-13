@@ -43,6 +43,25 @@ pnpm run web
 
 Scan the QR code with Expo Go to open the app on your device.
 
+### Installing the APK directly (Android)
+
+If you have an APK build and want to install it on a physical device or emulator via ADB:
+
+1. Enable **USB Debugging** on your Android device (`Settings > Developer Options`)
+2. Connect your device via USB and verify it is detected:
+
+```bash
+adb devices
+```
+
+1. Install the APK:
+
+```bash
+adb install <your-apk-file>.apk
+```
+
+> If you have multiple devices connected, target a specific one with `adb -s <device-id> install ...`
+
 ## Stack
 
 - [Expo](https://expo.dev) ~55
