@@ -1,50 +1,49 @@
-# Welcome to your Expo app 👋
+# Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> Mobile application built with React Native and Expo.
 
-## Get started
+<br>
 
-1. Install dependencies
+<!-- Screenshot -->
+<p align="center">
+  <img src="./assets/images/preview.png" alt="App screenshot" width="300" />
+</p>
 
-   ```bash
-   npm install
-   ```
+<br>
 
-2. Start the app
+## Requirements
 
-   ```bash
-   npx expo start
-   ```
+- [Node.js](https://nodejs.org/) >= 18
+- [pnpm](https://pnpm.io/) or [yarn](https://yarnpkg.com/) (imagine using npm in big 2026)
+- [Expo Go](https://expo.dev/go) on your device, or an Android/iOS emulator
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Installation
 
 ```bash
-npm run reset-project
+pnpm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Usage
 
-## Learn more
+```bash
+# Start the development server
+pnpm start
 
-To learn more about developing your project with Expo, look at the following resources:
+# Android
+pnpm run android
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# iOS
+pnpm run ios
 
-## Join the community
+# Web
+pnpm run web
+```
 
-Join our community of developers creating universal apps.
+Scan the QR code with Expo Go to open the app on your device.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Stack
+
+- [Expo](https://expo.dev) ~55
+- [React Native](https://reactnative.dev) 0.83
+- [React](https://react.dev) 19
+- [Expo Router](https://expo.github.io/router)
