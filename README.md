@@ -1,4 +1,4 @@
-# Mind & Body Mobile
+# Mind & Body Mobile (prototype)
 
 <br>
 
