@@ -1,6 +1,4 @@
-# Mobile App
-
-> Mobile application built with React Native and Expo.
+# Mind & Body Mobile
 
 <br>
 
@@ -10,6 +8,10 @@
 </p>
 
 <br>
+
+## About
+
+This is the mobile application for Mind & Body, a platform for gym members to train, view their routines, track their progress, and manage their workouts...
 
 ## Requirements
 
